@@ -34,32 +34,37 @@ import inquirer from "inquirer";
 
 // console.log(path.basename(resultsSync[0].path));`
 
-// 控制台输入测试
-// const questions = [
-//   {
-//     type: "input",
-//     name: "name",
-//     message: "请输入文件路径",
-//   },
-// ];
-
-// inquirer.prompt(questions).then((answers) => {
-//   console.log(`Hi ${answers.name}!`);
-// });
+inquirer
+  .prompt({
+    type: "input",
+    name: "name",
+    message: "请输入：想要进行匹配的文件夹路径",
+  })
+  .then((answers) => {
+    console.log(`文件输入路径为：${path.resolve(answers.name)}`);
+  });
+inquirer
+  .prompt({
+    type: "input",
+    name: "name",
+    message: "请输入：匹配完成后的输出文件夹路径",
+  })
+  .then((answers) => {
+    console.log(`文件输出路径为：${path.resolve(answers.name)}`);
+  });
 
 // 图片下载功能
-
-async function downloadImageFn() {
-  let tmdbImgPath = "";
-  let imgDownload = await fetch(
-    "https://image.tmdb.org/t/p/w600_and_h900_bestv2/myzr5h408vgDrmlRuclsSQkJ0of.jpg"
-  );
-  let imgPath = "G:\\115 Downloads\\folder.jpg";
-  let writer = fsExtra.createWriteStream(imgPath);
-  imgDownload.body.pipe(writer);
-  return new Promise((res, rej) => {
-    writer.on("finish", res);
-    writer.on("error", rej);
-  });
-}
-downloadImageFn();
+// async function downloadImageFn() {
+//   let tmdbImgPath = "";
+//   let imgDownload = await fetch(
+//     "https://image.tmdb.org/t/p/w600_and_h900_bestv2/myzr5h408vgDrmlRuclsSQkJ0of.jpg"
+//   );
+//   let imgPath = "G:\\115 Downloads\\folder.jpg";
+//   let writer = fsExtra.createWriteStream(imgPath);
+//   imgDownload.body.pipe(writer);
+//   return new Promise((res, rej) => {
+//     writer.on("finish", res);
+//     writer.on("error", rej);
+//   });
+// }
+// downloadImageFn();
