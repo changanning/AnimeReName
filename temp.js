@@ -3,6 +3,8 @@ import fsExtra from "fs-extra";
 import path from "path";
 import fetch from "node-fetch";
 import inquirer from "inquirer";
+import { execSync } from "child_process";
+import FormData from "form-data";
 // function getFilesAndFoldersSync(dir) {
 //     let fileListArr = [];
 //     // 获取当前路径的下所有文件夹以及文件
@@ -34,24 +36,25 @@ import inquirer from "inquirer";
 
 // console.log(path.basename(resultsSync[0].path));`
 
-inquirer
-  .prompt({
-    type: "input",
-    name: "name",
-    message: "请输入：想要进行匹配的文件夹路径",
-  })
-  .then((answers) => {
-    console.log(`文件输入路径为：${path.resolve(answers.name)}`);
-  });
-inquirer
-  .prompt({
-    type: "input",
-    name: "name",
-    message: "请输入：匹配完成后的输出文件夹路径",
-  })
-  .then((answers) => {
-    console.log(`文件输出路径为：${path.resolve(answers.name)}`);
-  });
+// 控制台输入
+// inquirer
+//   .prompt({
+//     type: "input",
+//     name: "name",
+//     message: "请输入：想要进行匹配的文件夹路径",
+//   })
+//   .then((answers) => {
+//     console.log(`文件输入路径为：${path.resolve(answers.name)}`);
+//   });
+// inquirer
+//   .prompt({
+//     type: "input",
+//     name: "name",
+//     message: "请输入：匹配完成后的输出文件夹路径",
+//   })
+//   .then((answers) => {
+//     console.log(`文件输出路径为：${path.resolve(answers.name)}`);
+//   });
 
 // 图片下载功能
 // async function downloadImageFn() {
@@ -68,3 +71,17 @@ inquirer
 //   });
 // }
 // downloadImageFn();
+
+// 文件复制
+console.log(fs.existsSync(`Z:\\115\\影视资源`));
+fs.copyFile(
+  "G:\\Temp_Torrents\\[ANi] 尼爾：自動人形 Ver1.1a - 13 [1080P][Baha][WEB-DL][AAC AVC][CHT].mp4",
+  "Z:\\115\\影视资源\\尼爾：自動人形 Ver1.1a - 13.mp4",
+  function (err) {
+    if (err) {
+      console.log("复制失败");
+      return;
+    }
+    console.log("复制成功");
+  }
+);

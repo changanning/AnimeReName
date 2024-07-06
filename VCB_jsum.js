@@ -12,8 +12,9 @@ const New_dir_path = "G:\\115_Downloads\\";
 // 特典关键词
 const SpKeyWords = {
   Trailers: /promotion|PV|character Pv|CM|Preview|Trailer|Teaser/,
-  Others: /NCED|NCOP|OP|ED|Menu|menu|MV|Easter Egg/i,
+  Others: /NCED|NCOP|OP|ED|Menu|menu|MV|Easter Egg|Lyric Video/i,
   Interviews: /IV|Making/,
+  CDs: /flac|cue|wav|log|jpg|png/i,
 };
 const SubKeyWords = {
   sub: /VCB-Studio|VCB-S|jsum/,
@@ -48,38 +49,38 @@ function anime_discernFn(arrPramas) {
     if (item.type == "Folder" && item.sonFolder.length >= 1) {
       // 字幕组识别
       let subtitles = subtitle_discernFn(item.path);
+
       if (subtitles.category == "TV") {
         let episode_num = tvEpisodeFn(item);
-
         let anime_tv = await tmdb_TV_requestFn(
           subtitles.name,
           subtitles.season_number,
           episode_num
         );
-
-        if (anime_tv.chinaName != "" && anime_tv.chinaName != "undefined") {
-          await tvSortTidyFn(
-            anime_tv.chinaName,
-            item.path,
-            subtitles.subtitles,
-            anime_tv.poster_path,
-            anime_tv.season_number
-          );
-        }
+        // if (anime_tv.chinaName != "" && anime_tv.chinaName != "undefined") {
+        //   await tvSortTidyFn(
+        //     anime_tv.chinaName,
+        //     item.path,
+        //     subtitles.subtitles,
+        //     anime_tv.poster_path,
+        //     anime_tv.season_number
+        //   );
+        // }
       }
       if (subtitles.category == "movie") {
+        // console.log(subtitles);
         let anime_movie = await tmdb_movie_requestFn(subtitles.name);
-        if (
-          anime_movie.chinaName != "" &&
-          anime_movie.chinaName != "undefined"
-        ) {
-          await movieSortTidyFn(
-            anime_movie.chinaName,
-            item.path,
-            subtitles.subtitles,
-            anime_movie.poster_path
-          );
-        }
+        // if (
+        //   anime_movie.chinaName != "" &&
+        //   anime_movie.chinaName != "undefined"
+        // ) {
+        //   await movieSortTidyFn(
+        //     anime_movie.chinaName,
+        //     item.path,
+        //     subtitles.subtitles,
+        //     anime_movie.poster_path
+        //   );
+        // }
       }
     }
   });
@@ -152,7 +153,6 @@ function subtitle_discernFn(path_name) {
         if (category_discern === null) category_discern = "TV";
       }
       if (/\b(10|[1-9])\b/g.test(item) && category_discern == "TV") {
-        // console.log(item);
         prototype_name = item;
         name = item.replace(/\b(10|[1-9])\b/g, "").trim();
         season_number = item.match(/\b(10|[1-9])\b/g).join("");
@@ -164,10 +164,7 @@ function subtitle_discernFn(path_name) {
       }
     });
   }
-  // console.log("   ");
-  // console.log(
-  //   `字幕组：${subtitles} 提取名字：${name} 识别类型：${category_discern} 季节：${season_number} 原名：${prototype_name}`
-  // );
+
   return {
     subtitles,
     name: name.trim(),
@@ -215,10 +212,10 @@ async function tvSortTidyFn(
         }
         if (path.extname(item.path) == ".ass") {
           if (/sc|SC|chs|CHS/.test(path.basename(item.path))) {
-            houZhui = ".chs.ass";
+            houZhui = ".zh-CN.ass";
           }
           if (/tc|TC|cht|CHT/.test(path.basename(item.path))) {
-            houZhui = ".cht.ass";
+            houZhui = ".zh-TW.ass";
           }
         }
         // 集数提取
@@ -326,10 +323,46 @@ async function tvSortTidyFn(
       });
     }
     // if (item.type == "Folder" && /CDs/.test(item.path)) {
-    //   tvReNameFn(
-    //     item.path,
-    //     `${newNamePath}\\CDs\\Season ${tvObj.seasonNum}\\CDs`
-    //   );
+    //   let cdArr = get_Dir_treeArrFn(item.path);
+    //   cdArr.forEach((two_item) => {
+    //     if (two_item.type == "Folder") {
+    //       if (
+    //         !fs.existsSync(`${new_file_path}\\CDs\\Season ${season_number}`)
+    //       ) {
+    //         fs.mkdir(
+    //           `${new_file_path}\\CDs\\Season ${season_number}`,
+    //           (err) => {}
+    //         );
+    //       }
+    //       for (let i = 0; i < two_item.sonFolder.length; i++) {
+    //         if (
+    //           !fs.existsSync(
+    //             `${new_file_path}\\CDs\\Season ${season_number}\\${path.basename(
+    //               two_item.path
+    //             )}`
+    //           )
+    //         ) {
+    //           fs.mkdir(
+    //             `${new_file_path}\\CDs\\Season ${season_number}\\${path.basename(
+    //               two_item.path
+    //             )}`,
+    //             (err) => {}
+    //           );
+    //         }
+    //         if (
+    //           two_item.sonFolder[i].type == "file" &&
+    //           SpKeyWords.CDs.test(path.extname(two_item.sonFolder[i].path))
+    //         ) {
+    //           tvReNameFn(
+    //             two_item.sonFolder[i].path,
+    //             `${new_file_path}\\CDs\\${path.basename(
+    //               two_item.path
+    //             )}\\${path.basename(two_item.sonFolder[i].path)}`
+    //           );
+    //         }
+    //       }
+    //     }
+    //   });
     // }
   });
 }
@@ -387,14 +420,14 @@ async function movieSortTidyFn(
         path.extname(item.path) == ".ass" &&
         /sc|SC|chs|CHS/.test(path.basename(item.path))
       ) {
-        let movie_sub_new_path = `${new_file_path}\\${movie_name} - ${resolution} - ${subtitles}.chs.ass`;
+        let movie_sub_new_path = `${new_file_path}\\${movie_name} - ${resolution} - ${subtitles}.zh-CN.ass`;
         movieReNameFn(item.path, movie_sub_new_path);
       }
       if (
         path.extname(item.path) == ".ass" &&
         /tc|TC|cht|CHT/.test(path.basename(item.path))
       ) {
-        let movie_sub_new_path = `${new_file_path}\\${movie_name} - ${resolution} - ${subtitles}.cht.ass`;
+        let movie_sub_new_path = `${new_file_path}\\${movie_name} - ${resolution} - ${subtitles}.zh-TW.ass`;
         movieReNameFn(item.path, movie_sub_new_path);
       }
     }
@@ -414,14 +447,14 @@ async function movieSortTidyFn(
         path.extname(item.path) == ".ass" &&
         /sc|SC|chs|CHS/.test(path.basename(item.path))
       ) {
-        let movie_sub_new_path = `${new_file_path}\\${movie_name} - ${resolution} - ${subtitles}.chs.mkv`;
+        let movie_sub_new_path = `${new_file_path}\\${movie_name} - ${resolution} - ${subtitles}.zh-CN.mkv`;
         movieReNameFn(item.path, movie_sub_new_path);
       }
       if (
         path.extname(item.path) == ".ass" &&
         /tc|TC|cht|CHT/.test(path.basename(item.path))
       ) {
-        let movie_sub_new_path = `${new_file_path}\\${movie_name} - ${resolution} - ${subtitles}.cht.mkv`;
+        let movie_sub_new_path = `${new_file_path}\\${movie_name} - ${resolution} - ${subtitles}.zh-TW.mkv`;
         movieReNameFn(item.path, movie_sub_new_path);
       }
 
@@ -503,6 +536,32 @@ async function movieSortTidyFn(
         }
       });
     }
+    // if (item.type == "Folder" && /CDs/.test(item.path)) {
+    //   let cdArr = get_Dir_treeArrFn(item.path);
+    //   cdArr.forEach((two_item) => {
+    //     if (two_item.type == "Folder") {
+    //       fs.mkdir(`${new_file_path}\\CDs`, (err) => {});
+
+    //       for (let i = 0; i < two_item.sonFolder.length; i++) {
+    //         fs.mkdir(
+    //           `${new_file_path}\\CDs\\${path.basename(two_item.path)}`,
+    //           (err) => {}
+    //         );
+    //         if (
+    //           two_item.sonFolder[i].type == "file" &&
+    //           SpKeyWords.CDs.test(path.extname(two_item.sonFolder[i].path))
+    //         ) {
+    //           tvReNameFn(
+    //             two_item.sonFolder[i].path,
+    //             `${new_file_path}\\CDs\\${path.basename(
+    //               two_item.path
+    //             )}\\${path.basename(two_item.sonFolder[i].path)}`
+    //           );
+    //         }
+    //       }
+    //     }
+    //   });
+    // }
   });
 }
 
@@ -512,9 +571,9 @@ function folderFountFn(keyWords, pathName, seasonNum) {
     if (!fs.existsSync(`${pathName}\\Season ${seasonNum}`)) {
       fs.mkdir(`${pathName}\\Season ${seasonNum}`, (err) => {});
     }
-    if (!fs.existsSync(`${pathName}\\CDs\\Season ${seasonNum}`)) {
-      fs.mkdir(`${pathName}\\CDs\\Season ${seasonNum}`, (err) => {});
-    }
+    // if (!fs.existsSync(`${pathName}\\CDs\\Season ${seasonNum}`)) {
+    //   fs.mkdir(`${pathName}\\CDs\\Season ${seasonNum}`, (err) => {});
+    // }
   } else {
     // if (!fs.existsSync(`${pathName}\\CDs`)) {
     //   fs.mkdir(`${pathName}\\CDs`, (err) => {});
@@ -556,7 +615,7 @@ function tvReNameFn(oldPath, newPath) {
     if (err != null) console.log(oldPath, "TV重命名失败：", err);
   });
 }
-
+``;
 // 电影重命名
 function movieReNameFn(old_path, new_path) {
   fs.rename(old_path, new_path, (err) => {
@@ -634,6 +693,7 @@ async function tmdb_TV_requestFn(anime_name, season_num, episode_num) {
   let chinaSeasonName = "";
   let season_number = 1;
   let poster_path = "";
+  let animeName = anime_name;
   let getParams = {
     method: "GET",
     headers: {
@@ -643,11 +703,23 @@ async function tmdb_TV_requestFn(anime_name, season_num, episode_num) {
   };
   anime_name = anime_name.replace(/ /g, "%20");
   let tv_search_api = `https://api.themoviedb.org/3/search/tv?query=${anime_name}&language=en-US&page=1`;
-  let tv_ID = await fetch(tv_search_api, getParams)
+  let tv_search_results = await fetch(tv_search_api, getParams)
     .then((res) => res.json())
-    .then((json) => json.results[0].id)
+    .then((json) => json)
     .catch((err) => console.log(anime_name + "ID请求错误", err));
-  let tv_Alternative_Titles_api = `https://api.themoviedb.org/3/tv/${tv_ID}/alternative_titles`;
+  let tv_ID = 0;
+  let tv_alternative_titles_api = `https://api.themoviedb.org/3/tv/${tv_ID}/alternative_titles`;
+
+  if (tv_search_results.total_results > 1) {
+    tv_search_results.results.forEach((item) => {
+      if (animeName == item.name && item.original_language == "ja") {
+        tv_ID = item.id;
+      }
+    });
+  } else {
+    tv_ID = tv_search_results.results[0].id;
+  }
+
   let tv_Details_api = `https://api.themoviedb.org/3/tv/${tv_ID}?language=zh-CN'`;
   let anime_tv_Details = await fetch(tv_Details_api, getParams)
     .then((res) => res.json())
@@ -675,18 +747,14 @@ async function tmdb_TV_requestFn(anime_name, season_num, episode_num) {
       if (item.name != "特别篇") {
         console.log("   ");
         console.log(
-          `${anime_name.replace(
-            "%20",
-            " "
-          )}集数错误，请检查集数。本地集数：${episode_num},查询结果集数：${season_episode_count}。匹配中文名称：${
-            anime_tv_Details.name
-          }。当前识别为：第${season_number}季`
+          `${animeName}集数错误，请检查集数。本地集数：${episode_num},查询结果集数：${season_episode_count}。匹配中文名称：${anime_tv_Details.name}。当前识别为：第${season_number}季`
         );
       }
     }
   });
+
   console.log("   ");
-  console.log("查询番剧名称：" + anime_name.replace(/%20/g, " "));
+  console.log("查询番剧名称：" + animeName);
   console.log("匹配结果");
   console.log("TMDB_ID：" + tv_ID);
   console.log("中文名称：" + chinaName);
