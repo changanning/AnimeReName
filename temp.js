@@ -73,15 +73,15 @@ import FormData from "form-data";
 // downloadImageFn();
 
 // 文件复制
-console.log(fs.existsSync(`Z:\\115\\影视资源`));
-fs.copyFile(
-  "G:\\Temp_Torrents\\[ANi] 尼爾：自動人形 Ver1.1a - 13 [1080P][Baha][WEB-DL][AAC AVC][CHT].mp4",
-  "Z:\\115\\影视资源\\尼爾：自動人形 Ver1.1a - 13.mp4",
-  function (err) {
-    if (err) {
-      console.log("复制失败");
-      return;
-    }
-    console.log("复制成功");
-  }
-);
+// console.log(fs.existsSync(`Z:\\115\\影视资源`));
+// fs.copyFile(
+//   "G:\\Temp_Torrents\\[ANi] 尼爾：自動人形 Ver1.1a - 13 [1080P][Baha][WEB-DL][AAC AVC][CHT].mp4",
+//   "Z:\\115\\影视资源\\尼爾：自動人形 Ver1.1a - 13.mp4",
+//   function (err) {
+//     if (err) {
+//       console.log("复制失败");
+//       return;
+//     }
+//     console.log("复制成功");
+//   }
+// );

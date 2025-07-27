@@ -4,13 +4,16 @@ import fetch from "node-fetch";
 import fsExtra from "fs-extra";
 import ffmpeg from "fluent-ffmpeg";
 import { execSync } from "child_process";
-// TMDB API访问令牌
+import { log } from "console";
+// TMDB API访问令牌 Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI3ZDUxNTViOTJkZjNiN2YxYWQxOWY4ZWY2YzI0NWFhNyIsIm5iZiI6MTcyODQyNDExMy42MjUxNTQsInN1YiI6IjY0NjM2NzljMGYzNjU1MDBmY2RmZGM3MSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.ItGZGGpx5LJKyIUtlSnTsOsYzAQDrV-wQ3QIGHMPU7g
 const Authorization =
-  "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI3ZDUxNTViOTJkZjNiN2YxYWQxOWY4ZWY2YzI0NWFhNyIsInN1YiI6IjY0NjM2NzljMGYzNjU1MDBmY2RmZGM3MSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.SuKbhiYAxIhSQTYK3__Q09MhL2DaL5w-RziJEKwEyS4";
+  "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI3ZDUxNTViOTJkZjNiN2YxYWQxOWY4ZWY2YzI0NWFhNyIsIm5iZiI6MTY4NDIzNjE4OC4zMzEsInN1YiI6IjY0NjM2NzljMGYzNjU1MDBmY2RmZGM3MSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.qunf2NcPt6fapXY_VdJ7vLZSDL72V3F6bdN5eFrm-iI";
 // 指定识别位置
-const DirectoryPath = "G:\\Sort";
+const DirectoryPath = "F:\\番剧识别\\matching";
+//const DirectoryPath = "\\\\Fnos\\媒体库\\刮削\\matching";
 // 指定生成位置
-const New_dir_path = "G:\\115_Downloads\\";
+const New_dir_path = "F:\\番剧识别\\Succeed\\";
+//const New_dir_path = "\\\\Fnos\\媒体库\\刮削\\Succeed\\";
 // 特典关键词
 const SpKeyWords = {
   Trailers: /promotion|PV|character Pv|CM|Preview|Trailer|Teaser/,
@@ -54,6 +57,7 @@ function get_Dir_treeArrFn(dirPath) {
       i++;
     }
   });
+  // console.log(fileListArr);
   return fileListArr;
 }
 let dir_treeArr = get_Dir_treeArrFn(DirectoryPath);
@@ -63,15 +67,16 @@ function anime_discernFn(arrPramas) {
   let fileArr = [];
   let animeTV = [];
   let animeMovie = [];
-  const data = arrPramas;
-  fs.writeFileSync("data.json", JSON.stringify(data));
+  // console.log(arrPramas);
   // 整理文件树
   arrPramas.forEach((item) => {
+    // console.log(item);
     if (item.type == "Folder") {
       let k = 0;
       // 检测合集
       if (item.sonFolder.length >= 1) {
         for (let i = 0; i < item.sonFolder.length; i++) {
+          // console.log(item.sonFolder[i]);
           if (
             item.sonFolder[i].type == "Folder" &&
             !SubKeyWords.folderName.test(path.basename(item.sonFolder[i].path))
@@ -111,9 +116,17 @@ function anime_discernFn(arrPramas) {
           }
         }
       }
+      if (arrPramas.length == 1 && fileArr.length != 1) {
+        fileArr.push(item);
+      }
+      // console.log(fileArr);
     }
   });
+  // console.log("11");
+
   fileArr.forEach(async (item) => {
+    // console.log(item);
+    // return;
     if (/OAD|OVA/.test(item.path)) return;
     // 获取剧名 季别 类型 压制组
     let { subtitles, name, category, prototype_name, season_number } =
@@ -133,6 +146,7 @@ function anime_discernFn(arrPramas) {
 
       // TMDB TV搜索 获取作品ID
       let res = await tv_search_resultsFn(name);
+      // console.log("作品ID: ", res.results[0].id);
       // 搜索结果判断 如多有条结果
       if (res.total_results == 1) {
         animeTVid = res.results[0].id;
@@ -143,6 +157,7 @@ function anime_discernFn(arrPramas) {
           season_number,
           episode_count
         );
+        console.log("TVID: ", tv_ID);
         animeTVid = tv_ID;
         if (seasonNum != 0) season_number = seasonNum;
       }
@@ -263,7 +278,7 @@ function anime_discernFn(arrPramas) {
           "本季集数：" + new_episode_number
         );
       }
-      return;
+      // return;
       if (china_name != null && china_name != "undefined") {
         await tvSortTidyFn(
           `${china_name}(${year})`,
@@ -277,7 +292,7 @@ function anime_discernFn(arrPramas) {
     if (category == "movie") {
       let anime_movie = await tmdb_movie_requestFn(name);
       if (anime_movie == null) return;
-      return;
+      // return;
       if (anime_movie.chinaName != "" && anime_movie.chinaName != "undefined") {
         await movieSortTidyFn(
           `${anime_movie.chinaName}(${anime_movie.year})`,
@@ -501,15 +516,17 @@ async function tvSortTidyFn(
   }
 
   // 下载infuse所需封面
-  downloadImageFn(poster_path, new_file_path);
+  // downloadImageFn(poster_path, new_file_path);
 
   // 获取新的目录树
   let fileTree = get_Dir_treeArrFn(old_file_path);
+
   fileTree.forEach((item) => {
     // 文件夹创建
     folderFountFn("TV", new_file_path, season_number);
     // 集数重命名
     if (item.type == "file") {
+      sleepFn(100);
       if (
         (/\[(0[1-9]|[1-9][0-9]*)\]/.test(path.basename(item.path)) ||
           /#(0[1-9]|[1-9][0-9]*)/.test(path.basename(item.path)) ||
@@ -546,7 +563,7 @@ async function tvSortTidyFn(
             .match(/\[(0[1-9]|[1-9][0-9])\]/)[1];
           tvReNameFn(
             item.path,
-            `${new_file_path}\\Season ${season_number}\\${name} - S0${season_number}E${episodeNum} - ${subtitles}${houZhui}`
+            `${new_file_path}\\Season 0${season_number}\\${name} - S0${season_number}E${episodeNum} - ${subtitles}${houZhui}`
           );
         }
         if (/#(0[1-9]|[1-9][0-9]*)/.test(path.basename(item.path))) {
@@ -555,7 +572,7 @@ async function tvSortTidyFn(
             .match(/#(0[1-9]|[1-9][0-9]*)/)[1];
           tvReNameFn(
             item.path,
-            `${new_file_path}\\Season ${season_number}\\${name} - S0${season_number}E${episodeNum} - ${subtitles}${houZhui}`
+            `${new_file_path}\\Season 0${season_number}\\${name} - S0${season_number}E${episodeNum} - ${subtitles}${houZhui}`
           );
         }
         if (/\b(0[1-9]|[1-9][0-9])\b/g.test(path.basename(item.path))) {
@@ -565,13 +582,15 @@ async function tvSortTidyFn(
             .join();
           tvReNameFn(
             item.path,
-            `${new_file_path}\\Season ${season_number}\\${name} - S0${season_number}E${episodeNum} - ${subtitles}${houZhui}`
+            `${new_file_path}\\Season 0${season_number}\\${name} - S0${season_number}E${episodeNum} - ${subtitles}${houZhui}`
           );
         }
       }
     }
     // SPs 分类处理
     if (subtitles == "jsum") {
+      sleepFn(100);
+      let i = 1;
       if (path.extname(item.path) == ".mkv") {
         if (SpKeyWords.Trailers.test(path.basename(item.path))) {
           let new_SP_Name = fileSPsReNameFn({
@@ -592,6 +611,37 @@ async function tvSortTidyFn(
             chinaName: name,
             path: item.path,
           });
+          if (/Menu(?!\s*\d)/.test(new_SP_Name)) {
+            let strtemp = path
+              .basename(item.path)
+              .match(/(Disc\s*\d+|Disc\d+|Vol\.?\s*\d+)/i);
+            function extractInfo(filename) {
+              let volMatch = filename.match(/\[Vol\.?\s*\d+]/);
+              let bdBoxMatch = filename.match(/\[BD-BOX\s*\d+\]/);
+              let discMatch = filename.match(/\[Disc\s*\d+\]/);
+              let menuMatch = filename.match(/\[Menu\s*\d+\]/);
+              let resultParts = [];
+              if (bdBoxMatch) {
+                resultParts.push(bdBoxMatch[0].replace(/[\[\]]/g, "")); // 去掉中括号
+              }
+              if (discMatch) {
+                resultParts.push(discMatch[0].replace(/[\[\]]/g, ""));
+              }
+              if (volMatch) {
+                resultParts.push(volMatch[0].replace(/[\[\]]/g, ""));
+              }
+              if (menuMatch) {
+                resultParts.push(menuMatch[0].replace(/[\[\]]/g, ""));
+              } else {
+                resultParts.push("Menu");
+              }
+              return resultParts.length > 0 ? resultParts.join(" ") : null;
+            }
+            let output =
+              "Season 0" + season_number + " " + extractInfo(item.path);
+
+            new_SP_Name = output;
+          }
           tvReNameFn(item.path, `${new_file_path}\\Extras\\${new_SP_Name}.mkv`);
         }
         if (SpKeyWords.Interviews.test(path.basename(item.path))) {
@@ -627,6 +677,7 @@ async function tvSortTidyFn(
       (path.basename(item.path) == "SPs" || path.basename(item.path) == "Bonus")
     ) {
       item.sonFolder.forEach((twoItem) => {
+        sleepFn(100);
         if (
           SpKeyWords.Others.test(twoItem.path) &&
           path.extname(twoItem.path) == ".mkv"
@@ -698,122 +749,6 @@ async function tvSortTidyFn(
   });
 }
 
-// 电影分类整理移动
-// 需求：对文件夹内的文件进行分类重命名并下载其封面
-// 参数需求：名字\文件原路径、字幕组\压制组名字、封面下载
-// 文件新路径
-// 原地重命名
-// async function movieSortTidyFn(
-//   movie_name,
-//   old_file_path,
-//   subtitles,
-//   poster_path
-// ) {
-//   // 文件新路径
-//   let new_file_path = DirectoryPath.concat(`\\${movie_name}`);
-//   // 文件夹重命名
-//   fs.renameSync(old_file_path, new_file_path, (err) => {
-//     if (err != null) console.log("重命名失败：", err);
-//   });
-//   // 分类文件夹创建
-//   folderFountFn("movie", new_file_path, 1);
-//   // console.log(get_Dir_treeArrFn(new_file_path));
-//   // infuse封面
-//   downloadImageFn(poster_path, new_file_path);
-//   // 获取新的文件目录
-//   let fileDirArr = get_Dir_treeArrFn(new_file_path);
-//   let fileSizeArr = [];
-//   let subtitlesArr = [];
-//   fileDirArr.forEach((item) => {
-//     if (
-//       SubKeyWords.extname.test(path.extname(item.path)) &&
-//       item.type == "file"
-//     ) {
-//       let stats = fs.statSync(item.path);
-//       fileSizeArr.push({
-//         size: stats.size,
-//         path: item.path,
-//       });
-//       // 特典文件处理
-//       if (subtitles == "jsum") {
-//         if (
-//           item.type == "file" &&
-//           SubKeyWords.extname.test(path.extname(item.path))
-//         ) {
-//           movieSpReNameFn(item.path, new_file_path, movie_name);
-//         }
-//       }
-//     }
-//     // 一般特典处理
-//     if (
-//       item.type == "Folder" &&
-//       (path.basename(item.path) == "SPs" || path.basename(item.path) == "Bonus")
-//     ) {
-//       item.sonFolder.forEach((twoItem) => {
-//         if (SubKeyWords.extname.test(path.extname(twoItem.path)))
-//           movieSpReNameFn(twoItem.path, new_file_path, movie_name);
-//       });
-//     }
-//     // CD处理
-//     if (item.type == "Folder" && path.basename(item.path) == "CDs")
-//       fs.renameSync(item.path, `${new_file_path}\\${movie_name} CDs`, (err) => {
-//         if (err != null) console.log("CDs 重命名失败：", err);
-//       });
-//     if (path.extname(item.path) == ".rar" && subtitles == "jsum") {
-//       if (!fs.existsSync(`${new_file_path}\\${movie_name} CDs`)) {
-//         fs.mkdir(`${new_file_path}\\${movie_name} CDs`, (err) => {});
-//       }
-//       fs.renameSync(
-//         item.path,
-//         `${new_file_path}\\${movie_name} CDs\\${path.basename(item.path)}`,
-//         (err) => {
-//           if (err != null) console.log("CDs 移动失败：", err);
-//         }
-//       );
-//     }
-//     // 字幕处理
-//     if (item.type == "file" && path.extname(item.path) == ".ass") {
-//       subtitlesArr.push(item);
-//     }
-//   });
-//   // 取文件夹中最大的视频文件作为电影
-//   if (fileSizeArr.length != 0) {
-//     let sizeMax = 0;
-//     let movie = null;
-//     let movieName = null;
-//     for (let i = 0; i < fileSizeArr.length; i++) {
-//       if (fileSizeArr[i].size > sizeMax) {
-//         sizeMax = fileSizeArr[i].size;
-//         movie = fileSizeArr[i];
-//       }
-//     }
-//     if (fs.existsSync(movie.path)) {
-//       ffmpeg.ffprobe(movie.path, (err, videoDate) => {
-//         if (err) {
-//           console.error("无法获取视频信息:", err);
-//           return;
-//         }
-//         // console.log("视频文件信息:", videoDate.format);
-//         // console.log("视频文件信息:", videoDate.streams);
-//         movieName = `${new_file_path}\\${movie_name} - ${videoDate.streams[0].height}p - ${subtitles}`;
-//         let movie_new_path = `${new_file_path}\\${movie_name} - ${
-//           videoDate.streams[0].height
-//         }p - ${subtitles}${path.extname(movie.path)}`;
-//         movieReNameFn(movie.path, movie_new_path);
-//         if (subtitlesArr.length != 0) {
-//           subtitlesArr.forEach((item) => {
-//             if (/sc|SC|chs|CHS/.test(path.basename(item.path))) {
-//               movieReNameFn(item.path, `${movieName}.zh-CN.ass`);
-//             }
-//             if (/tc|TC|cht|CHT/.test(path.basename(item.path))) {
-//               movieReNameFn(item.path, `${movieName}.zh-TW.ass`);
-//             }
-//           });
-//         }
-//       });
-//     }
-//   }
-// }
 async function movieSortTidyFn(
   movie_name,
   old_file_path,
@@ -821,7 +756,7 @@ async function movieSortTidyFn(
   poster_path
 ) {
   // 文件新路径
-  let new_file_path = New_dir_path.concat(`\\Movie\\${movie_name}`);
+  let new_file_path = New_dir_path.concat(`Movie\\${movie_name}`);
   // 文件夹重命名
   if (!fs.existsSync(new_file_path)) {
     fs.mkdir(new_file_path, (err) => {});
@@ -830,7 +765,7 @@ async function movieSortTidyFn(
   folderFountFn("movie", new_file_path, 1);
   // console.log(get_Dir_treeArrFn(new_file_path));
   // infuse封面
-  downloadImageFn(poster_path, new_file_path);
+  // downloadImageFn(poster_path, new_file_path);
   // 获取新的文件目录
   let fileDirArr = get_Dir_treeArrFn(old_file_path);
   let fileSizeArr = [];
@@ -928,6 +863,7 @@ async function movieSortTidyFn(
     }
   }
 }
+
 function sleepFn(milliseconds) {
   const start = Date.now();
   let now = null;
@@ -936,8 +872,10 @@ function sleepFn(milliseconds) {
     now = Date.now();
   } while (now - start < milliseconds);
 }
+
 // 创建分类文件夹
 function folderFountFn(keyWords, pathName, seasonNum) {
+  if (seasonNum < 10) seasonNum = `0${seasonNum}`;
   if (keyWords != "movie") {
     if (!fs.existsSync(`${pathName}\\Season ${seasonNum}`)) {
       fs.mkdir(`${pathName}\\Season ${seasonNum}`, (err) => {});
@@ -1098,11 +1036,12 @@ async function tmdb_movie_requestFn(movie_name) {
 async function tv_search_resultsFn(anime_name) {
   anime_name = anime_name.replace(/ /g, "%20");
   let tv_search_api = `https://api.themoviedb.org/3/search/tv?query=${anime_name}&language=en-US&page=1`;
+
   let tv_search_results = await fetch(tv_search_api, getParams)
     .then((res) => res.json())
     .then((json) => json)
     .catch((err) => console.log(anime_name + "ID请求错误", err));
-  // console.log(tv_search_results);
+  // console.log("作品ID:", tv_search_results);
   return tv_search_results;
 }
 
@@ -1130,7 +1069,7 @@ async function tv_alternative_titlesFn(
       .then((json) => json)
       .catch((err) => console.error("error:" + err));
     let animeDetails = await tvDetailsFn(tvDetailsArr[i].id);
-    // console.log(titles.results);
+    // console.log("作品名字: ", titles.results);
     for (let k = 0; k < titles.results.length; k++) {
       if (tv_ID != null) break;
       if (new RegExp(animeName, "i").test(titles.results[k].title)) {
